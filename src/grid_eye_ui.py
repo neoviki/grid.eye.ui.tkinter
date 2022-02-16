@@ -62,6 +62,7 @@ def grid_eye_draw(cx, cy, pixel):
 
             c1.create_text(x+15, y+15, fill='black', text=str(value))
 
+
 def init_pixels():
     global pixel
     pixel = [0]*64
@@ -78,10 +79,24 @@ def init_serial(serial_port):
 def read_serial():
     global serial_mon
     serial_data = serial_mon.readline()
-    print serial_data
+    #print serial_data
     return serial_data
 
-def parse_pixels(serial_data):
+def parse_serial_data(serial_data):
+    global pixel, pixel_ready
+    s = str(serial_data)
+    e1 = s.split("#")
+    if(len(e1) >= 2):
+        e2 = e1[1]
+
+        #grid eye pixel values are here
+        e3 = e2.split(",")
+        #print(e3)
+        for i in range(0, 64):
+            pixel[i] = int(e3[i])
+            print pixel
+            pixel_ready=True
+
     return 1
 
 def list_serial_ports():
@@ -93,8 +108,8 @@ def list_serial_ports():
     print serial_ports
     return serial_ports
 
-def background_thread():
-    global quit_called
+def serial_monitor_thread():
+    global quit_called, root, pixel
     serial_ports = list_serial_ports()
     init_serial(serial_ports[1])
     #init_serial('/dev/cu.usbmodem14201')
@@ -102,37 +117,58 @@ def background_thread():
     while True:
         if quit_called == False:
             serial_data = read_serial()
-            time.sleep(1)
+            parse_serial_data(serial_data)
+            ui_update()
+            time.sleep(0.1)
         else:
             break
 
-def serial_monitor_thread():
+def serial_monitor_thread_begin():
     global smon_thread
     try:
-        smon_thread=Thread(target=background_thread,args=())
+        smon_thread=Thread(target=serial_monitor_thread,args=())
         smon_thread.start()
     except:
         print "error: creating thread"
 
-def ui_thread():
+def serial_monitor_thread_end():
+    global serial_mon, smon_thread
+    serial_mon.close()
+    print "EXIT: Serial Monitor"
+    smon_thread.join()
+    print "Exit: Serial Monitor Thread"
+
+def ui_update():
+    global pixel, root, pixel_ready
+
+    if pixel_ready == True:
+        grid_eye_draw(10,10, pixel)
+        pixel_ready=False
+
+    #fill other sensors update routine here
+    root.update()
+
+def ui_thread_begin():
+    global pixel
     draw(280,280)
     init_pixels()
     grid_eye_draw(10,10, pixel)
     loop()
 
-def main():
-    global pixel, smon_thread, root, serial_mon, quit_called
-    quit_called=False
-
-    serial_monitor_thread()
-    ui_thread()
+def ui_thread_end():
+    global root, quit_called
     root.quit()
-    print "ui exitted"
-
-    serial_mon.close()
     quit_called=True
-    print "serial mon exitted"
-    smon_thread.join()
-    print "serial mon thread exitted"
+    print "EXIT: UI THREAD"
+
+def main():
+    global quit_called, pixel_ready
+    quit_called=False
+    pixel_ready = False
+    serial_monitor_thread_begin()
+    ui_thread_begin()
+    ui_thread_end()
+    serial_monitor_thread_end()
+
 
 main()
