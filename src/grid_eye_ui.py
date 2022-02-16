@@ -2,24 +2,34 @@
     Grid Eye UI
 
     Author: Viki (a) Vignesh Natarajan
+
+    #Python2.7
 '''
+
 
 from tkinter import *
 import random
+import time
+#pip install pyserial
+import serial
+from threading import Thread
+import serial.tools.list_ports
+
 
 def draw(width, height):
-    global ws
+    global root
     dimension=str(width)+'x'+str(height)
-    ws = Tk()
-    ws.title('Sensor Fusion')
-    ws.geometry(dimension)
-    ws.config(bg='white')
+    root = Tk()
+    root.title('Sensor Fusion')
+    root.geometry(dimension)
+    root.config(bg='white')
 
 def loop():
-    global ws
-    ws.mainloop()
+    global root
+    root.mainloop()
 
 def grid_eye_draw(cx, cy, pixel):
+    global root
     grid_width=30
     grid_height=30
     n_grid_rows=8
@@ -27,7 +37,7 @@ def grid_eye_draw(cx, cy, pixel):
 
     canvas_height=n_grid_rows*grid_height+15
     canvas_width = n_grid_cols*grid_width+15
-    c1 = Canvas(ws,height=canvas_height,width=canvas_width,bg='black')
+    c1 = Canvas(root,height=canvas_height,width=canvas_width,bg='black')
     c1.pack()
     c1.place(x=cx,y=cy)
 
@@ -60,11 +70,69 @@ def init_pixels():
 
     print pixel
 
-def main():
-    global pixel
+def init_serial(serial_port):
+    global serial_mon
+    serial_mon = serial.Serial(serial_port)
+    serial_mon.flushInput()
+
+def read_serial():
+    global serial_mon
+    serial_data = serial_mon.readline()
+    print serial_data
+    return serial_data
+
+def parse_pixels(serial_data):
+    return 1
+
+def list_serial_ports():
+    serial_port_list = serial.tools.list_ports.comports()
+    serial_ports = []
+    for element in serial_port_list:
+        serial_ports.append(element.device)
+
+    print serial_ports
+    return serial_ports
+
+def background_thread():
+    global quit_called
+    serial_ports = list_serial_ports()
+    init_serial(serial_ports[1])
+    #init_serial('/dev/cu.usbmodem14201')
+
+    while True:
+        if quit_called == False:
+            serial_data = read_serial()
+            time.sleep(1)
+        else:
+            break
+
+def serial_monitor_thread():
+    global smon_thread
+    try:
+        smon_thread=Thread(target=background_thread,args=())
+        smon_thread.start()
+    except:
+        print "error: creating thread"
+
+def ui_thread():
     draw(280,280)
     init_pixels()
     grid_eye_draw(10,10, pixel)
     loop()
+
+def main():
+    global pixel, smon_thread, root, serial_mon, quit_called
+    quit_called=False
+
+    serial_monitor_thread()
+    ui_thread()
+    root.quit()
+    print "ui exitted"
+
+    serial_mon.close()
+    quit_called=True
+    print "serial mon exitted"
+    smon_thread.join()
+    print "serial mon thread exitted"
 
 main()
