@@ -1,11 +1,12 @@
 from tkinter import *
 import random
 
-def setup():
+def draw(width, height):
     global ws
+    dimension=str(width)+'x'+str(height)
     ws = Tk()
     ws.title('Sensor Fusion')
-    ws.geometry('1000x600')
+    ws.geometry(dimension)
     ws.config(bg='white')
 
 def loop():
@@ -55,7 +56,7 @@ def init_pixels():
 
 def main():
     global pixel
-    setup()
+    draw(280,280)
     init_pixels()
     grid_eye_draw(10,10, pixel)
     loop()
