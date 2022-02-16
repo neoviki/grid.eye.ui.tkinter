@@ -1,3 +1,9 @@
+'''
+    Grid Eye UI
+
+    Author: Viki (a) Vignesh Natarajan
+'''
+
 from tkinter import *
 import random
 
