@@ -133,7 +133,7 @@ def loop():
     global root
     root.mainloop()
 
-def grid_eye_draw(cx, cy, pixel):
+def grid_eye_draw(cx, cy, lpixel):
     global root
     grid_width=30
     grid_height=30
@@ -152,7 +152,7 @@ def grid_eye_draw(cx, cy, pixel):
         y=r*grid_height+10
         for c in range(0,8):
             x=c*grid_width+10
-            value=pixel[(r+1)*c]
+            value=lpixel[(r+1)*c]
 
             if(value <= 50):
                 c1.create_rectangle(x,y,x+grid_width,y+grid_height, outline='grey', fill='#3440eb')
@@ -217,6 +217,10 @@ def parse_serial_data(serial_data):
         #grid eye pixel values are here
         e3 = e2.split(",")
         #print(e3)
+
+        if pixel_ready == True:
+            return 0
+
         for i in range(0, 64):
             pixel[i] = int(e3[i])
             print pixel
@@ -301,8 +305,8 @@ def ui_main_thread_begin():
 
     ui_object_group_port_selector_create(10, 20)
 
-    if serial_connected == True:
-        grid_eye_draw(ge_x, ge_y, pixel)
+    #if serial_connected == True:
+    grid_eye_draw(ge_x, ge_y, pixel)
 
 
 def ui_main_thread_end():
